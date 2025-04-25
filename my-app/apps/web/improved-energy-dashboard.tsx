@@ -194,16 +194,22 @@ export default function EnergyDashboard() {
         }
         
         // Handle car charging differently based on mode
-        if (!userEditedComponents.car) {
+        if (!userEditedComponents.car || isAutoMode) { // Changed this line to apply auto adjustments even when user edited
           if (!isAutoMode) {
             // In manual mode, use the random fluctuation (as before)
-            updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+            if (!userEditedComponents.car) {
+              updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+            } else {
+              // Keep the user-set value in manual mode
+              updatedData.car = prev.car;
+            }
           } else {
             // New automatic mode implementation
+            // In auto mode, continue decreasing car charging even after user edits
             // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
             if (prev.grid < 0) {
               // Grid is negative, decrease car charging
-              const newCarCharging = prev.car + 1;
+              const newCarCharging = prev.car + 1; // decrease by 1kW
               console.log("AUTO MODE: Decreasing car charging from", prev.car, "to", newCarCharging);
               updatedData.car = +newCarCharging.toFixed(2);
             } else {
