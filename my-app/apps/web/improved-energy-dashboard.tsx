@@ -28,6 +28,9 @@ export default function EnergyDashboard() {
   const [editValue, setEditValue] = useState(0)
   const [isAutoUpdating, setIsAutoUpdating] = useState(true)
   
+  // New state for automatic/manual mode
+  const [isAutoMode, setIsAutoMode] = useState(true)
+  
   // Track which components have been manually edited by the user
   const [userEditedComponents, setUserEditedComponents] = useState({
     solar: false,
@@ -41,6 +44,11 @@ export default function EnergyDashboard() {
   
   // Ref to keep track of the interval
   const intervalRef = useRef(null)
+
+  // Toggle between automatic and manual modes
+  const toggleAutoMode = () => {
+    setIsAutoMode(prev => !prev)
+  }
 
   // Simulate data updates
   useEffect(() => {
@@ -65,9 +73,31 @@ export default function EnergyDashboard() {
           }
         }
         
-        // Only update components that haven't been manually edited by the user
+        // Handle car charging differently based on mode
         if (!userEditedComponents.car) {
-          updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+          if (!isAutoMode) {
+            // In manual mode, use the random fluctuation (as before)
+            updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+          } else {
+            // In automatic mode, adjust car charging to balance the grid
+            // Calculate green components (battery + solar)
+            const batteryInKw = updatedData.battery.power / 1000;
+            const greenComponents = updatedData.solar + batteryInKw;
+            
+            // Calculate other red components (excluding car)
+            const otherRedComponents = updatedData.heatPump + updatedData.heating + updatedData.fridge + updatedData.appliance;
+            
+            // Calculate car charging needed to make grid approximately 0 or slightly negative
+            // Target grid at -0.5 kW (slightly negative)
+            const targetGrid = -0.5;
+            // Car charging = green components + target grid - other red components
+            const carCharging = -(greenComponents + targetGrid - otherRedComponents);
+            
+            // Ensure car charging is at least 0 and not too high
+            // If car charging would need to be positive (supply to grid), set to 0
+            updatedData.car = Math.min(-0.1, Math.max(-20, carCharging));
+            updatedData.car = +updatedData.car.toFixed(2);
+          }
         }
         
         if (!userEditedComponents.heatPump) {
@@ -145,7 +175,7 @@ export default function EnergyDashboard() {
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [weatherMode, userEditedComponents]); // Add weatherMode and userEditedComponents as dependencies
+  }, [weatherMode, userEditedComponents, isAutoMode]); // Added isAutoMode as dependency
 
   // Handle weather mode changes
   const handleWeatherChange = (mode) => {
@@ -373,6 +403,26 @@ export default function EnergyDashboard() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800">
+      {/* Auto/Manual Mode Toggle Button */}
+      <div className="mb-4 mt-4">
+        <button
+          onClick={toggleAutoMode}
+          className={`px-6 py-3 rounded-full font-bold text-white transition-colors ${
+            isAutoMode 
+              ? "bg-green-600 hover:bg-green-700" 
+              : "bg-blue-600 hover:bg-blue-700"
+          }`}
+        >
+          {isAutoMode ? "Automatic Mode" : "Manual Mode"}
+        </button>
+        <p className="text-gray-300 text-sm mt-2 text-center">
+          {isAutoMode 
+            ? "Car charging is automatically adjusted to balance the grid" 
+            : "All components use their set values"
+          }
+        </p>
+      </div>
+
       <div className="relative">
         <svg viewBox="0 0 800 600" className="w-full h-auto">
           {/* Home */}
