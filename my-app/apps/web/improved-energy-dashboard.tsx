@@ -9,14 +9,14 @@ export default function EnergyDashboard() {
     grid: -2.33,
     solar: 9.04,
     home: -11.39,
-    car: -11.01,
+    car: -22.01,
     heatPump: -5,
     heating: -3,
     fridge: -0.42,
     appliance: -1, // in kilowatts (changed from watts)
     battery: {
       power: 5000,
-      percentage: 23,
+      percentage: 72,
     },
     average15min: 47.9,
   })
@@ -31,8 +31,8 @@ export default function EnergyDashboard() {
   // New state for automatic/manual mode
   const [isAutoMode, setIsAutoMode] = useState(true)
   
-  // New state for target grid value
-  const [targetGrid, setTargetGrid] = useState(0)
+  // New state for target grid value (changed from 0 to -15)
+  const [targetGrid, setTargetGrid] = useState(-15)
   
   // Track which components have been manually edited by the user
   const [userEditedComponents, setUserEditedComponents] = useState({
