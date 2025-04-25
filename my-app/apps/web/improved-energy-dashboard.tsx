@@ -530,6 +530,20 @@ export default function EnergyDashboard() {
         </button>
       </div>
       
+      {/* Car charging summary */}
+      {Math.abs(data.car) > 0.1 && (
+        <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
+          <h3 className="text-lg font-semibold text-white mb-1">Car Charging Summary</h3>
+          <div className="grid grid-cols-3 gap-2 text-sm">
+
+            <div>
+              <p className="text-gray-300">Range Added/Hour</p>
+              <p className="font-bold text-white">{Math.round(Math.abs(data.car) * 5)} km</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Value Adjustment Modal */}
       {editComponent && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
