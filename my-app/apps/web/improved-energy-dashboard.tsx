@@ -52,109 +52,14 @@ export default function EnergyDashboard() {
 
   // Simulate data updates
   useEffect(() => {
-    const interval = setInterval(() => {
-      setData((prev) => {
-        // Update individual components first
-        const updatedData = { ...prev };
-        
-        // Only update solar if the user hasn't manually set it
-        if (!userEditedComponents.solar) {
-          // Calculate solar output based on current weather mode
-          switch (weatherMode) {
-            case "sunny":
-              updatedData.solar = +(9 + Math.random() * 2).toFixed(2);
-              break;
-            case "cloudy":
-              updatedData.solar = +(4 + Math.random() * 2).toFixed(2);
-              break;
-            case "rainy":
-              updatedData.solar = +(1 + Math.random() * 1.5).toFixed(2);
-              break;
-          }
-        }
-        
-        // Handle car charging differently based on mode
-        if (!userEditedComponents.car) {
-          if (!isAutoMode) {
-            // In manual mode, use the random fluctuation (as before)
-            console.log("MANUAL prev.car:", prev.car);
-            updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
-          } else {
-            // New automatic mode implementation
-            // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
-            if (prev.grid < 0) {
-              console.log("AUTO: Grid is negative, decreasing car charging")
-              // Grid is negative, decrease car charging
-              const newCarCharging = prev.car + 1 ; // decrease by 1kW
-
-              console.log("newCarCharging:", newCarCharging, "prev.car:", prev.car);
-              updatedData.car = +newCarCharging.toFixed(2);
-            } else {
-              // Grid is already at or above zero, don't change car charging
-              updatedData.car = prev.car;
-            }
-          }
-        }
-        
-        if (!userEditedComponents.heatPump) {
-          updatedData.heatPump = -5; // Fixed default value
-        }
-        
-        if (!userEditedComponents.heating) {
-          updatedData.heating = -3; // Fixed default value
-        }
-        
-        if (!userEditedComponents.fridge) {
-          updatedData.fridge = +(prev.fridge + (Math.random() * 0.05 - 0.02)).toFixed(2);
-        }
-        
-        if (!userEditedComponents.appliance) {
-          // Heavy random factor for appliance: randomly fluctuates between -0.5 and -3.5 kW
-          // Simulates various appliances turning on and off (washing machine, oven, microwave, etc.)
-          const applianceBase = -2;
-          const applianceVariation = Math.random() * 3; // 0 to 3
-          updatedData.appliance = +(applianceBase - applianceVariation).toFixed(2);
-        }
-        
-        if (!userEditedComponents.battery) {
-          updatedData.battery = {
-            power: 5000, // Fixed default value
-            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
-          };
-        } else {
-          // Update only the percentage, but keep the user-set power value
-          updatedData.battery = {
-            ...prev.battery,
-            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
-          };
-        }
-        
-        // Calculate sum of all consumer components (red buttons)
-        // Exclude home from its own calculation (only sum the actual devices)
-        const consumerSum = +(updatedData.car + updatedData.heatPump + updatedData.heating + 
-                            updatedData.fridge + updatedData.appliance).toFixed(2);
-        
-        // Update home value to be the sum of all consumer components
-        updatedData.home = consumerSum;
-        
-        const batteryInKw = updatedData.battery.power / 1000;
-        const greenComponents = updatedData.solar + batteryInKw;
-        
-        // Exclude grid and home from grid calculation - only consider actual devices
-        const redComponents = updatedData.car + updatedData.heatPump + 
-                            updatedData.heating + updatedData.fridge + updatedData.appliance;
-        
-        // Grid value is calculated as the sum of green components and red components
-        updatedData.grid = +(greenComponents + redComponents).toFixed(2);
-        
-
-        // Log all components for debugging
-        
-        return updatedData;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
+    // Use the shared startAutoUpdates function to avoid duplicate code
+    startAutoUpdates();
+    
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, [weatherMode, userEditedComponents, isAutoMode]); // Added isAutoMode as dependency
 
   // Handle weather mode changes
@@ -298,7 +203,8 @@ export default function EnergyDashboard() {
             // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
             if (prev.grid < 0) {
               // Grid is negative, decrease car charging
-              const newCarCharging = Math.max(-20, prev.car - 1); // decrease by 1kW, don't go below -20kW
+              const newCarCharging = prev.car + 1;
+              console.log("AUTO MODE: Decreasing car charging from", prev.car, "to", newCarCharging);
               updatedData.car = +newCarCharging.toFixed(2);
             } else {
               // Grid is already at or above zero, don't change car charging
