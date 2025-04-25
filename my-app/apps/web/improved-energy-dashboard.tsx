@@ -77,26 +77,22 @@ export default function EnergyDashboard() {
         if (!userEditedComponents.car) {
           if (!isAutoMode) {
             // In manual mode, use the random fluctuation (as before)
+            console.log("MANUAL prev.car:", prev.car);
             updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
           } else {
-            // In automatic mode, adjust car charging to balance the grid
-            // Calculate green components (battery + solar)
-            const batteryInKw = updatedData.battery.power / 1000;
-            const greenComponents = updatedData.solar + batteryInKw;
-            
-            // Calculate other red components (excluding car)
-            const otherRedComponents = updatedData.heatPump + updatedData.heating + updatedData.fridge + updatedData.appliance;
-            
-            // Calculate car charging needed to make grid approximately 0 or slightly negative
-            // Target grid at -0.5 kW (slightly negative)
-            const targetGrid = -0.5;
-            // Car charging = green components + target grid - other red components
-            const carCharging = -(greenComponents + targetGrid - otherRedComponents);
-            
-            // Ensure car charging is at least 0 and not too high
-            // If car charging would need to be positive (supply to grid), set to 0
-            updatedData.car = Math.min(-0.1, Math.max(-20, carCharging));
-            updatedData.car = +updatedData.car.toFixed(2);
+            // New automatic mode implementation
+            // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
+            if (prev.grid < 0) {
+              console.log("AUTO: Grid is negative, decreasing car charging")
+              // Grid is negative, decrease car charging
+              const newCarCharging = prev.car + 1 ; // decrease by 1kW
+
+              console.log("newCarCharging:", newCarCharging, "prev.car:", prev.car);
+              updatedData.car = +newCarCharging.toFixed(2);
+            } else {
+              // Grid is already at or above zero, don't change car charging
+              updatedData.car = prev.car;
+            }
           }
         }
         
@@ -151,24 +147,8 @@ export default function EnergyDashboard() {
         // Grid value is calculated as the sum of green components and red components
         updatedData.grid = +(greenComponents + redComponents).toFixed(2);
         
+
         // Log all components for debugging
-        console.log("Energy Components:", {
-          greenComponents: {
-            solar: updatedData.solar,
-            battery: batteryInKw,
-            total: greenComponents.toFixed(2)
-          },
-          redComponents: {
-            car: updatedData.car,
-            heatPump: updatedData.heatPump,
-            heating: updatedData.heating,
-            fridge: updatedData.fridge,
-            appliance: updatedData.appliance,
-            total: redComponents.toFixed(2)
-          },
-          grid: updatedData.grid,
-          home: updatedData.home
-        });
         
         return updatedData;
       });
@@ -308,9 +288,23 @@ export default function EnergyDashboard() {
           }
         }
         
-        // Only update components that haven't been manually edited by the user
+        // Handle car charging differently based on mode
         if (!userEditedComponents.car) {
-          updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+          if (!isAutoMode) {
+            // In manual mode, use the random fluctuation (as before)
+            updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+          } else {
+            // New automatic mode implementation
+            // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
+            if (prev.grid < 0) {
+              // Grid is negative, decrease car charging
+              const newCarCharging = Math.max(-20, prev.car - 1); // decrease by 1kW, don't go below -20kW
+              updatedData.car = +newCarCharging.toFixed(2);
+            } else {
+              // Grid is already at or above zero, don't change car charging
+              updatedData.car = prev.car;
+            }
+          }
         }
         
         if (!userEditedComponents.heatPump) {
@@ -363,7 +357,7 @@ export default function EnergyDashboard() {
         
         // Grid value is calculated as the sum of green components and red components
         updatedData.grid = +(greenComponents + redComponents).toFixed(2);
-        console.log("greenComponents:", greenComponents, "redComponents:", redComponents);
+        
         
         // Log all components for debugging
         console.log("Energy Components:", {
