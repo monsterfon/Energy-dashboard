@@ -31,6 +31,9 @@ export default function EnergyDashboard() {
   // New state for automatic/manual mode
   const [isAutoMode, setIsAutoMode] = useState(true)
   
+  // New state for target grid value
+  const [targetGrid, setTargetGrid] = useState(0)
+  
   // Track which components have been manually edited by the user
   const [userEditedComponents, setUserEditedComponents] = useState({
     solar: false,
@@ -48,6 +51,11 @@ export default function EnergyDashboard() {
   // Toggle between automatic and manual modes
   const toggleAutoMode = () => {
     setIsAutoMode(prev => !prev)
+  }
+
+  // Handle target grid slider change
+  const handleTargetGridChange = (e) => {
+    setTargetGrid(Number(e.target.value))
   }
 
   // Simulate data updates
@@ -194,7 +202,7 @@ export default function EnergyDashboard() {
         }
         
         // Handle car charging differently based on mode
-        if (!userEditedComponents.car || isAutoMode) { // Changed this line to apply auto adjustments even when user edited
+        if (!userEditedComponents.car || isAutoMode) { 
           if (!isAutoMode) {
             // In manual mode, use the random fluctuation (as before)
             if (!userEditedComponents.car) {
@@ -204,16 +212,16 @@ export default function EnergyDashboard() {
               updatedData.car = prev.car;
             }
           } else {
-            // New automatic mode implementation
-            // In auto mode, continue decreasing car charging even after user edits
-            // If grid is below zero, decrease car charging by 1kW every interval until grid goes above zero
-            if (prev.grid < 0) {
-              // Grid is negative, decrease car charging
-              const newCarCharging = prev.car + 1; // decrease by 1kW
-              console.log("AUTO MODE: Decreasing car charging from", prev.car, "to", newCarCharging);
+            // New automatic mode implementation with target grid value from slider
+            // If grid is below target value, decrease car charging by 1kW every interval
+            // until grid goes above target value
+            if (prev.grid < targetGrid) {
+              // Grid is below target, decrease car charging
+              const newCarCharging = Math.min(0, prev.car + 1); // increase by 1kW (less negative), don't exceed 0
+              console.log(`AUTO MODE: Decreasing car charging from ${prev.car} to ${newCarCharging} (Target: ${targetGrid}kW)`);
               updatedData.car = +newCarCharging.toFixed(2);
             } else {
-              // Grid is already at or above zero, don't change car charging
+              // Grid is already at or above target, don't change car charging
               updatedData.car = prev.car;
             }
           }
@@ -323,11 +331,35 @@ export default function EnergyDashboard() {
         </button>
         <p className="text-gray-300 text-sm mt-2 text-center">
           {isAutoMode 
-            ? "Car charging is automatically adjusted to balance the grid" 
+            ? "Car charging is automatically adjusted to reach target grid value" 
             : "All components use their set values"
           }
         </p>
       </div>
+
+      {/* Target Grid Slider */}
+      {isAutoMode && (
+        <div className="mb-6 w-80 px-4">
+          <div className="flex justify-between mb-2">
+            <span className="text-gray-300 text-sm">Target Grid:</span>
+            <span className="text-white font-bold">{targetGrid} kW</span>
+          </div>
+          <input 
+            type="range" 
+            min="-15" 
+            max="5" 
+            step="0.5" 
+            value={targetGrid} 
+            onChange={handleTargetGridChange} 
+            className="w-full h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+          />
+          <div className="flex justify-between mt-1 text-xs text-gray-400">
+            <span>-15 kW</span>
+            <span>0 kW</span>
+            <span>5 kW</span>
+          </div>
+        </div>
+      )}
 
       <div className="relative">
         <svg viewBox="0 0 800 600" className="w-full h-auto">
