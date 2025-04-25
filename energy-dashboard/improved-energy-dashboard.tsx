@@ -45,7 +45,8 @@ export default function EnergyDashboard() {
   }, [])
 
   return (
-    <div className="w-full min-h-screen bg-gray-800 p-4 flex items-center justify-center">
+    <div className="w-full min-h-screen bg-gray-800 p-4 flex flex-col items-center justify-center">
+      <h1 className="text-4xl font-bold text-white mb-8">Home Energy Management</h1>
       <div className="relative w-full max-w-4xl aspect-[4/3] bg-gray-800 rounded-xl p-6">
         {/* SVG for all elements without connections */}
         <svg className="w-full h-full" viewBox="0 0 800 600">
@@ -63,20 +64,17 @@ export default function EnergyDashboard() {
             </text>
           </g>
 
-          {/* Fridge - Above House */}
-          <g transform="translate(400, 120)">
-            <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
-            <g transform="translate(-24, -24) scale(1.5)">
-              {/* Fridge icon */}
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="2" width="16" height="20" rx="2" stroke="#ef4444" strokeWidth="2" />
-                <line x1="4" y1="10" x2="20" y2="10" stroke="#ef4444" strokeWidth="2" />
-                <line x1="9" y1="6" x2="9" y2="8" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-                <line x1="9" y1="14" x2="9" y2="16" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-              </svg>
+          {/* Battery - Moved to top center */}
+          <g transform="translate(400, 70)">
+            <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
+            <g transform="translate(-24, -35) scale(1.5)">
+              <Battery size={32} />
             </g>
-            <text x="0" y="40" textAnchor="middle" fill="#ef4444" fontSize="24" fontWeight="bold">
-              {data.fridge} kW
+            <text x="0" y="20" textAnchor="middle" fill="#22c55e" fontSize="24" fontWeight="bold">
+              {data.battery.power} W
+            </text>
+            <text x="0" y="50" textAnchor="middle" fill="#22c55e" fontSize="20">
+              {data.battery.percentage}%
             </text>
           </g>
 
@@ -115,17 +113,20 @@ export default function EnergyDashboard() {
             </text>
           </g>
 
-          {/* Battery - Right Center - made bigger */}
+          {/* Fridge - Moved to right center */}
           <g transform="translate(650, 300)">
-            <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
-            <g transform="translate(-24, -35) scale(1.5)">
-              <Battery size={32} />
+            <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
+            <g transform="translate(-24, -24) scale(1.5)">
+              {/* Fridge icon */}
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="2" width="16" height="20" rx="2" stroke="#ef4444" strokeWidth="2" />
+                <line x1="4" y1="10" x2="20" y2="10" stroke="#ef4444" strokeWidth="2" />
+                <line x1="9" y1="6" x2="9" y2="8" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                <line x1="9" y1="14" x2="9" y2="16" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+              </svg>
             </g>
-            <text x="0" y="20" textAnchor="middle" fill="#22c55e" fontSize="24" fontWeight="bold">
-              {data.battery.power} W
-            </text>
-            <text x="0" y="50" textAnchor="middle" fill="#22c55e" fontSize="20">
-              {data.battery.percentage}%
+            <text x="0" y="40" textAnchor="middle" fill="#ef4444" fontSize="24" fontWeight="bold">
+              {data.fridge} kW
             </text>
           </g>
 
