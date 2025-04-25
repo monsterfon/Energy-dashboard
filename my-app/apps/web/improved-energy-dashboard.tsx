@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Car, Sun, Battery, Flame, Cloud, CloudRain } from "lucide-react"
+import { useState, useEffect, useRef } from "react"
+import { Car, Sun, Battery, Flame, Cloud, CloudRain, X, ChevronUp, ChevronDown } from "lucide-react"
 
 export default function EnergyDashboard() {
   // In a real app, this data would come from an API
@@ -10,41 +10,142 @@ export default function EnergyDashboard() {
     solar: 9.04,
     home: -11.39,
     car: -11.01,
-    heatPump: -1.25,
-    heating: -0.85,
+    heatPump: -5,
+    heating: -3,
     fridge: -0.42,
-    appliance: 399, // in watts
+    appliance: -1, // in kilowatts (changed from watts)
     battery: {
-      power: 20,
+      power: 5000,
       percentage: 23,
     },
     average15min: 47.9,
   })
 
   const [weatherMode, setWeatherMode] = useState("sunny")
+  
+  // State for component value adjustment
+  const [editComponent, setEditComponent] = useState(null)
+  const [editValue, setEditValue] = useState(0)
+  const [isAutoUpdating, setIsAutoUpdating] = useState(true)
+  
+  // Track which components have been manually edited by the user
+  const [userEditedComponents, setUserEditedComponents] = useState({
+    solar: false,
+    car: false,
+    heatPump: false,
+    heating: false,
+    fridge: false,
+    appliance: false,
+    battery: false,
+  })
+  
+  // Ref to keep track of the interval
+  const intervalRef = useRef(null)
 
   // Simulate data updates
   useEffect(() => {
     const interval = setInterval(() => {
-      setData((prev) => ({
-        ...prev,
-        solar: +(prev.solar + (Math.random() * 0.2 - 0.1)).toFixed(2),
-        car: prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car,
-        heatPump: +(prev.heatPump + (Math.random() * 0.2 - 0.1)).toFixed(2),
-        heating: +(prev.heating + (Math.random() * 0.15 - 0.05)).toFixed(2),
-        fridge: +(prev.fridge + (Math.random() * 0.05 - 0.02)).toFixed(2),
-        home: +(prev.home + (Math.random() * 0.4 - 0.2)).toFixed(2),
-        grid: +(prev.grid + (Math.random() * 0.3 - 0.15)).toFixed(2),
-        appliance: Math.max(300, Math.min(500, prev.appliance + Math.floor(Math.random() * 20 - 10))),
-        battery: {
-          power: Math.min(100, Math.max(0, prev.battery.power + Math.floor(Math.random() * 5 - 2))),
-          percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
-        },
-      }))
-    }, 3000)
+      setData((prev) => {
+        // Update individual components first
+        const updatedData = { ...prev };
+        
+        // Only update solar if the user hasn't manually set it
+        if (!userEditedComponents.solar) {
+          // Calculate solar output based on current weather mode
+          switch (weatherMode) {
+            case "sunny":
+              updatedData.solar = +(9 + Math.random() * 2).toFixed(2);
+              break;
+            case "cloudy":
+              updatedData.solar = +(4 + Math.random() * 2).toFixed(2);
+              break;
+            case "rainy":
+              updatedData.solar = +(1 + Math.random() * 1.5).toFixed(2);
+              break;
+          }
+        }
+        
+        // Only update components that haven't been manually edited by the user
+        if (!userEditedComponents.car) {
+          updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+        }
+        
+        if (!userEditedComponents.heatPump) {
+          updatedData.heatPump = -5; // Fixed default value
+        }
+        
+        if (!userEditedComponents.heating) {
+          updatedData.heating = -3; // Fixed default value
+        }
+        
+        if (!userEditedComponents.fridge) {
+          updatedData.fridge = +(prev.fridge + (Math.random() * 0.05 - 0.02)).toFixed(2);
+        }
+        
+        if (!userEditedComponents.appliance) {
+          // Heavy random factor for appliance: randomly fluctuates between -0.5 and -3.5 kW
+          // Simulates various appliances turning on and off (washing machine, oven, microwave, etc.)
+          const applianceBase = -2;
+          const applianceVariation = Math.random() * 3; // 0 to 3
+          updatedData.appliance = +(applianceBase - applianceVariation).toFixed(2);
+        }
+        
+        if (!userEditedComponents.battery) {
+          updatedData.battery = {
+            power: 5000, // Fixed default value
+            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
+          };
+        } else {
+          // Update only the percentage, but keep the user-set power value
+          updatedData.battery = {
+            ...prev.battery,
+            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
+          };
+        }
+        
+        // Calculate sum of all consumer components (red buttons)
+        // Exclude home from its own calculation (only sum the actual devices)
+        const consumerSum = +(updatedData.car + updatedData.heatPump + updatedData.heating + 
+                            updatedData.fridge + updatedData.appliance).toFixed(2);
+        
+        // Update home value to be the sum of all consumer components
+        updatedData.home = consumerSum;
+        
+        const batteryInKw = updatedData.battery.power / 1000;
+        const greenComponents = updatedData.solar + batteryInKw;
+        
+        // Exclude grid and home from grid calculation - only consider actual devices
+        const redComponents = updatedData.car + updatedData.heatPump + 
+                            updatedData.heating + updatedData.fridge + updatedData.appliance;
+        
+        // Grid value is calculated as the sum of green components and red components
+        updatedData.grid = +(greenComponents + redComponents).toFixed(2);
+        
+        // Log all components for debugging
+        console.log("Energy Components:", {
+          greenComponents: {
+            solar: updatedData.solar,
+            battery: batteryInKw,
+            total: greenComponents.toFixed(2)
+          },
+          redComponents: {
+            car: updatedData.car,
+            heatPump: updatedData.heatPump,
+            heating: updatedData.heating,
+            fridge: updatedData.fridge,
+            appliance: updatedData.appliance,
+            total: redComponents.toFixed(2)
+          },
+          grid: updatedData.grid,
+          home: updatedData.home
+        });
+        
+        return updatedData;
+      });
+    }, 3000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, [weatherMode, userEditedComponents]); // Add weatherMode and userEditedComponents as dependencies
 
   // Handle weather mode changes
   const handleWeatherChange = (mode) => {
@@ -70,34 +171,233 @@ export default function EnergyDashboard() {
     }))
   }
 
+  // Handle opening the edit modal for a component
+  const handleEditComponent = (component, initialValue) => {
+    // Stop auto updates when editing
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      setIsAutoUpdating(false)
+    }
+    
+    setEditComponent(component)
+    
+    // For battery (object with power property), convert from W to kW
+    if (component === 'battery') {
+      setEditValue(initialValue.power / 1000)
+    } else {
+      // For consumers (negative values), show absolute value in modal
+      setEditValue(Math.abs(initialValue))
+    }
+  }
+  
+  // Handle saving the edited value
+  const handleSaveEdit = () => {
+    if (!editComponent) return
+    
+    // Mark this component as user-edited
+    setUserEditedComponents(prev => ({
+      ...prev,
+      [editComponent]: true
+    }))
+    
+    setData(prev => {
+      const updated = { ...prev }
+      
+      if (editComponent === 'battery') {
+        // Convert back to watts for storage
+        updated.battery = {
+          ...prev.battery,
+          power: editValue * 1000
+        }
+      } else if (['car', 'heatPump', 'heating', 'fridge', 'appliance'].includes(editComponent)) {
+        // For consumers, store as negative value
+        updated[editComponent] = -Math.abs(editValue)
+      } else {
+        // For solar, store as is (positive)
+        updated[editComponent] = editValue
+      }
+      
+      return updated
+    })
+    
+    // Close the modal
+    setEditComponent(null)
+    
+    // Restart auto updates if they were enabled before
+    if (!isAutoUpdating) {
+      startAutoUpdates()
+    }
+  }
+  
+  // Handle canceling the edit
+  const handleCancelEdit = () => {
+    setEditComponent(null)
+    
+    // Restart auto updates if they were enabled before
+    if (!isAutoUpdating) {
+      startAutoUpdates()
+    }
+  }
+  
+  // Handle value adjustment with arrow buttons
+  const adjustValue = (amount) => {
+    setEditValue(prev => {
+      // Calculate new value with 2 decimal places
+      const newValue = +(prev + amount).toFixed(2)
+      // Don't allow negative values in the adjustment modal
+      return Math.max(0, newValue)
+    })
+  }
+  
+  // Start auto updates
+  const startAutoUpdates = () => {
+    // Clear any existing interval
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+    }
+    
+    // Start a new interval
+    intervalRef.current = setInterval(() => {
+      setData((prev) => {
+        // Update individual components first
+        const updatedData = { ...prev };
+        
+        // Only update solar if the user hasn't manually set it
+        if (!userEditedComponents.solar) {
+          // Calculate solar output based on current weather mode
+          switch (weatherMode) {
+            case "sunny":
+              updatedData.solar = +(9 + Math.random() * 2).toFixed(2);
+              break;
+            case "cloudy":
+              updatedData.solar = +(4 + Math.random() * 2).toFixed(2);
+              break;
+            case "rainy":
+              updatedData.solar = +(1 + Math.random() * 1.5).toFixed(2);
+              break;
+          }
+        }
+        
+        // Only update components that haven't been manually edited by the user
+        if (!userEditedComponents.car) {
+          updatedData.car = prev.car < -0.1 ? +(prev.car + (Math.random() * 0.3 - 0.1)).toFixed(2) : prev.car;
+        }
+        
+        if (!userEditedComponents.heatPump) {
+          updatedData.heatPump = -5; // Fixed default value
+        }
+        
+        if (!userEditedComponents.heating) {
+          updatedData.heating = -3; // Fixed default value
+        }
+        
+        if (!userEditedComponents.fridge) {
+          updatedData.fridge = +(prev.fridge + (Math.random() * 0.05 - 0.02)).toFixed(2);
+        }
+        
+        if (!userEditedComponents.appliance) {
+          // Heavy random factor for appliance: randomly fluctuates between -0.5 and -3.5 kW
+          // Simulates various appliances turning on and off (washing machine, oven, microwave, etc.)
+          const applianceBase = -2;
+          const applianceVariation = Math.random() * 3; // 0 to 3
+          updatedData.appliance = +(applianceBase - applianceVariation).toFixed(2);
+        }
+        
+        if (!userEditedComponents.battery) {
+          updatedData.battery = {
+            power: 5000, // Fixed default value
+            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
+          };
+        } else {
+          // Update only the percentage, but keep the user-set power value
+          updatedData.battery = {
+            ...prev.battery,
+            percentage: Math.min(100, Math.max(0, prev.battery.percentage + Math.floor(Math.random() * 2 - 1))),
+          };
+        }
+        
+        // Calculate sum of all consumer components (red buttons)
+        // Exclude home from its own calculation (only sum the actual devices)
+        const consumerSum = +(updatedData.car + updatedData.heatPump + updatedData.heating + 
+                            updatedData.fridge + updatedData.appliance).toFixed(2);
+        
+        // Update home value to be the sum of all consumer components
+        updatedData.home = consumerSum;
+        
+        const batteryInKw = updatedData.battery.power / 1000;
+        const greenComponents = updatedData.solar + batteryInKw;
+        
+        // Exclude grid and home from grid calculation - only consider actual devices
+        const redComponents = updatedData.car + updatedData.heatPump + 
+                            updatedData.heating + updatedData.fridge + updatedData.appliance;
+        
+        // Grid value is calculated as the sum of green components and red components
+        updatedData.grid = +(greenComponents + redComponents).toFixed(2);
+        console.log("greenComponents:", greenComponents, "redComponents:", redComponents);
+        
+        // Log all components for debugging
+        console.log("Energy Components:", {
+          greenComponents: {
+            solar: updatedData.solar,
+            battery: batteryInKw,
+            total: greenComponents.toFixed(2)
+          },
+          redComponents: {
+            car: updatedData.car,
+            heatPump: updatedData.heatPump,
+            heating: updatedData.heating,
+            fridge: updatedData.fridge,
+            appliance: updatedData.appliance,
+            total: redComponents.toFixed(2)
+          },
+          grid: updatedData.grid,
+          home: updatedData.home
+        });
+        
+        return updatedData;
+      });
+    }, 3000);
+    
+    setIsAutoUpdating(true);
+  };
+  
+  // Initialize auto updates on component mount
+  useEffect(() => {
+    startAutoUpdates();
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [weatherMode]);
+
   return (
-    <div className="w-full min-h-screen bg-gray-800 p-4 flex flex-col items-center justify-center">
-      <h1 className="text-4xl font-bold text-white mb-8">Home Energy Management</h1>
-      <div className="relative w-full max-w-4xl aspect-[4/3] bg-gray-800 rounded-xl p-6">
-        {/* SVG for all elements without connections */}
-        <svg className="w-full h-full" viewBox="0 0 800 600">
-          {/* House in center - made bigger */}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-800">
+      <div className="relative">
+        <svg viewBox="0 0 800 600" className="w-full h-auto">
+          {/* Home */}
           <g transform="translate(400, 300)">
             <path d="M-100,-70 L0,-130 L100,-70 L100,70 L-100,70 Z" stroke="#22c55e" strokeWidth="4" fill="none" />
-            <text x="0" y="15" textAnchor="middle" fill="#22c55e" fontSize="32" fontWeight="bold">
+            <text x="0" y="0" textAnchor="middle" fill="#22c55e" fontSize="32" fontWeight="bold">
               {data.home} kW
             </text>
-            <text x="0" y="100" textAnchor="middle" fill="#d1d5db" fontSize="18">
+            <text x="0" y="40" textAnchor="middle" fill="#d1d5db" fontSize="18">
               15min average
-            </text>
-            <text x="0" y="130" textAnchor="middle" fill="#d1d5db" fontSize="24" fontWeight="bold">
-              {data.average15min} kW
             </text>
           </g>
 
           {/* Battery - Moved to top center */}
-          <g transform="translate(400, 70)">
+          <g 
+            transform="translate(400, 70)" 
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('battery', data.battery)}
+          >
             <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
             <g transform="translate(-24, -35) scale(1.5)">
               <Battery size={32} />
             </g>
             <text x="0" y="20" textAnchor="middle" fill="#22c55e" fontSize="24" fontWeight="bold">
-              {data.battery.power} W
+              {data.battery.power/1000} kW
             </text>
             <text x="0" y="50" textAnchor="middle" fill="#22c55e" fontSize="20">
               {data.battery.percentage}%
@@ -114,18 +414,38 @@ export default function EnergyDashboard() {
           </g>
 
           {/* PV Panels - Top Right - made bigger */}
-          <g transform="translate(650, 120)">
+          <g 
+            transform="translate(650, 120)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('solar', data.solar)}
+          >
             <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
               <Sun size={32} />
+              {/* Weather indicator overlays - moved up */}
+              {weatherMode === "cloudy" && (
+                <Cloud size={20} className="text-gray-500" style={{ position: 'absolute', top: -12, right: -10 }} />
+              )}
+              {weatherMode === "rainy" && (
+                <CloudRain size={20} className="text-blue-800" style={{ position: 'absolute', top: -12, right: -10 }} />
+              )}
             </g>
             <text x="0" y="40" textAnchor="middle" fill="#22c55e" fontSize="24" fontWeight="bold">
               {data.solar} kW
             </text>
+            <text x="-55" y="-55" textAnchor="start" fill="#d1d5db" fontSize="14">
+              {weatherMode === "sunny" && "☀️ Optimal"}
+              {weatherMode === "cloudy" && "☁️ Reduced"}
+              {weatherMode === "rainy" && "🌧️ Minimal"}
+            </text>
           </g>
 
           {/* Appliance - Left Center - made bigger */}
-          <g transform="translate(150, 300)">
+          <g 
+            transform="translate(150, 300)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('appliance', data.appliance)}
+          >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
@@ -135,20 +455,28 @@ export default function EnergyDashboard() {
               </svg>
             </g>
             <text x="0" y="40" textAnchor="middle" fill="#ef4444" fontSize="24" fontWeight="bold">
-              {data.appliance} W
+              {data.appliance} kW
             </text>
           </g>
 
           {/* Fridge - Moved to right center */}
-          <g transform="translate(650, 300)">
+          <g 
+            transform="translate(650, 300)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('fridge', data.fridge)}
+          >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
-              {/* Fridge icon */}
+              {/* Improved Fridge icon */}
               <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="2" width="16" height="20" rx="2" stroke="#ef4444" strokeWidth="2" />
-                <line x1="4" y1="10" x2="20" y2="10" stroke="#ef4444" strokeWidth="2" />
-                <line x1="9" y1="6" x2="9" y2="8" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
-                <line x1="9" y1="14" x2="9" y2="16" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                {/* Main fridge body */}
+                <rect x="5" y="2" width="14" height="20" rx="2" stroke="#ef4444" strokeWidth="2" />
+                {/* Divider line between freezer and fridge */}
+                <line x1="5" y1="9" x2="19" y2="9" stroke="#ef4444" strokeWidth="2" />
+                {/* Upper door handle */}
+                <line x1="15" y1="5" x2="15" y2="7" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
+                {/* Lower door handle */}
+                <line x1="15" y1="12" x2="15" y2="14" stroke="#ef4444" strokeWidth="2" strokeLinecap="round" />
               </svg>
             </g>
             <text x="0" y="40" textAnchor="middle" fill="#ef4444" fontSize="24" fontWeight="bold">
@@ -157,7 +485,11 @@ export default function EnergyDashboard() {
           </g>
 
           {/* Car - Bottom Left - made bigger */}
-          <g transform="translate(150, 480)">
+          <g 
+            transform="translate(150, 480)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('car', data.car)}
+          >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
               <Car size={32} />
@@ -168,7 +500,11 @@ export default function EnergyDashboard() {
           </g>
 
           {/* Heat Pump - Bottom Right - now red */}
-          <g transform="translate(650, 480)">
+          <g 
+            transform="translate(650, 480)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('heatPump', data.heatPump)}
+          >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
               {/* Improved heat pump icon */}
@@ -195,7 +531,11 @@ export default function EnergyDashboard() {
           </g>
 
           {/* New Heating Button - Moved further down */}
-          <g transform="translate(400, 530)">
+          <g 
+            transform="translate(400, 530)"
+            className="cursor-pointer"
+            onClick={() => handleEditComponent('heating', data.heating)}
+          >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
               <Flame size={32} className="text-red-500" />
@@ -208,31 +548,89 @@ export default function EnergyDashboard() {
       </div>
 
       {/* Weather mode buttons */}
-      <div className="flex justify-center gap-8 mt-8">
+      <div className="flex justify-center gap-4 mt-6">
         <button
           onClick={() => handleWeatherChange("rainy")}
-          className={`flex flex-col items-center justify-center w-24 h-24 rounded-full bg-blue-900 border-4 ${weatherMode === "rainy" ? "border-white" : "border-blue-900"}`}
+          className={`flex flex-col items-center justify-center w-16 h-16 rounded-full bg-blue-900 border-2 ${weatherMode === "rainy" ? "border-white" : "border-blue-900"}`}
         >
-          <CloudRain size={40} className="text-white" />
-          <span className="text-white mt-1">Rainy</span>
+          <CloudRain size={20} className="text-white" />
+          <span className="text-white text-xs mt-0.5">Rainy</span>
         </button>
 
         <button
           onClick={() => handleWeatherChange("cloudy")}
-          className={`flex flex-col items-center justify-center w-24 h-24 rounded-full bg-blue-400 border-4 ${weatherMode === "cloudy" ? "border-white" : "border-blue-400"}`}
+          className={`flex flex-col items-center justify-center w-16 h-16 rounded-full bg-blue-400 border-2 ${weatherMode === "cloudy" ? "border-white" : "border-blue-400"}`}
         >
-          <Cloud size={40} className="text-white" />
-          <span className="text-white mt-1">Cloudy</span>
+          <Cloud size={20} className="text-white" />
+          <span className="text-white text-xs mt-0.5">Cloudy</span>
         </button>
 
         <button
           onClick={() => handleWeatherChange("sunny")}
-          className={`flex flex-col items-center justify-center w-24 h-24 rounded-full bg-yellow-400 border-4 ${weatherMode === "sunny" ? "border-white" : "border-yellow-400"}`}
+          className={`flex flex-col items-center justify-center w-16 h-16 rounded-full bg-yellow-400 border-2 ${weatherMode === "sunny" ? "border-white" : "border-yellow-400"}`}
         >
-          <Sun size={40} className="text-white" />
-          <span className="text-white mt-1">Sunny</span>
+          <Sun size={20} className="text-white" />
+          <span className="text-white text-xs mt-0.5">Sunny</span>
         </button>
       </div>
+      
+      {/* Value Adjustment Modal */}
+      {editComponent && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-700 rounded-lg p-6 w-80 shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-white capitalize">
+                {editComponent === 'heatPump' ? 'Heat Pump' : editComponent}
+              </h3>
+              <button 
+                onClick={handleCancelEdit}
+                className="text-gray-300 hover:text-white"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="flex flex-col items-center mb-6">
+              <div className="text-5xl font-bold text-white mb-2">{editValue.toFixed(2)}</div>
+              <div className="text-gray-300">kW</div>
+            </div>
+            
+            <div className="flex justify-center gap-4 mb-6">
+              <button 
+                onClick={() => adjustValue(-1)}
+                className="w-12 h-12 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <ChevronDown size={24} />
+              </button>
+              <button 
+                onClick={() => adjustValue(-0.1)}
+                className="w-12 h-12 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <span className="text-sm">-0.1</span>
+              </button>
+              <button 
+                onClick={() => adjustValue(0.1)}
+                className="w-12 h-12 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <span className="text-sm">+0.1</span>
+              </button>
+              <button 
+                onClick={() => adjustValue(1)}
+                className="w-12 h-12 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <ChevronUp size={24} />
+              </button>
+            </div>
+            
+            <button 
+              onClick={handleSaveEdit}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
