@@ -10,8 +10,8 @@ export default function EnergyDashboard() {
     solar: 9.04,
     home: -11.39,
     car: -22.01,
-    heatPump: -5,
-    heating: -3,
+    heatPump: -3,  // Changed from -5 to -3
+    heating: -2,   // Changed from -3 to -2
     fridge: -0.42,
     appliance: -1, // in kilowatts (changed from watts)
     battery: {
@@ -228,11 +228,11 @@ export default function EnergyDashboard() {
         }
         
         if (!userEditedComponents.heatPump) {
-          updatedData.heatPump = -5; // Fixed default value
+          updatedData.heatPump = -3; // Changed from -5 to -3
         }
         
         if (!userEditedComponents.heating) {
-          updatedData.heating = -3; // Fixed default value
+          updatedData.heating = -2; // Changed from -3 to -2
         }
         
         if (!userEditedComponents.fridge) {
