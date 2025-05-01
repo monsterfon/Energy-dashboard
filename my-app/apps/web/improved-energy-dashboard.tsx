@@ -614,48 +614,22 @@ export default function EnergyDashboard() {
         </button>
       </div>
       
-      {/* Car charging summary */}
+      {/* Car charging summary - updated to show only km/hour */}
       {Math.abs(data.car) > 0.1 && (
         <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
-          <h3 className="text-lg font-semibold text-white mb-1">Car Charging Summary</h3>
-          <div className="grid grid-cols-3 gap-2 text-sm">
-            <div>
-              <p className="text-gray-300">Current Rate</p>
-              <p className="font-bold text-white">{Math.abs(data.car).toFixed(2)} kW</p>
-            </div>
-            <div>
-              <p className="text-gray-300">Per Hour</p>
-              <p className="font-bold text-white">{Math.abs(data.car).toFixed(1)} kWh</p>
-            </div>
-            <div>
-              <p className="text-gray-300">Range Added/Hour</p>
-              <p className="font-bold text-white">{Math.round(Math.abs(data.car) * 5)} km</p>
-            </div>
+          <h3 className="text-lg font-semibold text-white mb-1">Car Charging</h3>
+          <div className="text-center">
+            <p className="font-bold text-white text-xl">{Math.round(Math.abs(data.car) * 5)} km/h</p>
           </div>
-          <p className="text-xs text-gray-400 mt-2">
-            {isAutoMode 
-              ? "Charging rate adjusts automatically based on grid balance" 
-              : "Charging rate is fixed in manual mode"}
-          </p>
         </div>
       )}
       
-      {/* Home Temperature Display */}
+      {/* Home Temperature Display - showing only temperature */}
       <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
         <h3 className="text-lg font-semibold text-white mb-1">Home Temperature</h3>
-        <div className="grid grid-cols-2 gap-4 text-sm">
-          <div>
-            <p className="text-gray-300">Total Heating Power</p>
-            <p className="font-bold text-white">{Math.abs(data.heatPump) + Math.abs(data.heating)} kW</p>
-          </div>
-          <div>
-            <p className="text-gray-300">Temperature</p>
-            <p className="font-bold text-white">{calculateHomeTemperature(Math.abs(data.heatPump) + Math.abs(data.heating))} °C</p>
-          </div>
+        <div className="text-center">
+          <p className="font-bold text-white text-xl">{calculateHomeTemperature(Math.abs(data.heatPump) + Math.abs(data.heating))} °C</p>
         </div>
-        <p className="text-xs text-gray-400 mt-2">
-          Based on combined heating power (heat pump + heating)
-        </p>
       </div>
       
       {/* Value Adjustment Modal */}
