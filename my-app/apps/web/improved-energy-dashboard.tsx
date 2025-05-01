@@ -57,6 +57,58 @@ export default function EnergyDashboard() {
   const handleTargetGridChange = (e) => {
     setTargetGrid(Number(e.target.value))
   }
+  
+  // Calculate home temperature based on total heating power
+  const calculateHomeTemperature = (totalHeatingPower) => {
+    // Use the provided temperature table
+    const temperatureTable = [
+      { power: 1.5, temp: 17.10 },
+      { power: 2.0, temp: 18.00 },
+      { power: 3.0, temp: 19.80 },
+      { power: 4.0, temp: 21.60 },
+      { power: 5.0, temp: 23.40 },
+      { power: 6.0, temp: 25.20 },
+      { power: 7.0, temp: 27.00 },
+      { power: 8.0, temp: 28.80 },
+      { power: 9.0, temp: 30.60 },
+      { power: 10.0, temp: 32.40 },
+      { power: 11.0, temp: 34.20 },
+      { power: 12.0, temp: 36.00 }
+    ];
+    
+    // Handle cases outside the table range
+    if (totalHeatingPower <= 0) return 15.00; // Base temperature with no heating
+    if (totalHeatingPower < 1.5) {
+      // Linear interpolation between 0 and 1.5kW
+      return +(15.00 + (totalHeatingPower / 1.5) * (17.10 - 15.00)).toFixed(2);
+    }
+    if (totalHeatingPower > 12.0) return 36.00; // Max temperature in the table
+    
+    // Find the closest power entries in the table for interpolation
+    let lowerEntry = temperatureTable[0];
+    let upperEntry = temperatureTable[temperatureTable.length - 1];
+    
+    for (let i = 0; i < temperatureTable.length; i++) {
+      if (temperatureTable[i].power === totalHeatingPower) {
+        // Exact match found
+        return temperatureTable[i].temp;
+      }
+      
+      if (temperatureTable[i].power < totalHeatingPower) {
+        lowerEntry = temperatureTable[i];
+      }
+      
+      if (temperatureTable[i].power > totalHeatingPower && temperatureTable[i].power < upperEntry.power) {
+        upperEntry = temperatureTable[i];
+      }
+    }
+    
+    // Linear interpolation between the two closest power entries
+    const ratio = (totalHeatingPower - lowerEntry.power) / (upperEntry.power - lowerEntry.power);
+    const interpolatedTemp = lowerEntry.temp + ratio * (upperEntry.temp - lowerEntry.temp);
+    
+    return +interpolatedTemp.toFixed(2);
+  }
 
   // Simulate data updates
   useEffect(() => {
@@ -567,14 +619,44 @@ export default function EnergyDashboard() {
         <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
           <h3 className="text-lg font-semibold text-white mb-1">Car Charging Summary</h3>
           <div className="grid grid-cols-3 gap-2 text-sm">
-
+            <div>
+              <p className="text-gray-300">Current Rate</p>
+              <p className="font-bold text-white">{Math.abs(data.car).toFixed(2)} kW</p>
+            </div>
+            <div>
+              <p className="text-gray-300">Per Hour</p>
+              <p className="font-bold text-white">{Math.abs(data.car).toFixed(1)} kWh</p>
+            </div>
             <div>
               <p className="text-gray-300">Range Added/Hour</p>
               <p className="font-bold text-white">{Math.round(Math.abs(data.car) * 5)} km</p>
             </div>
           </div>
+          <p className="text-xs text-gray-400 mt-2">
+            {isAutoMode 
+              ? "Charging rate adjusts automatically based on grid balance" 
+              : "Charging rate is fixed in manual mode"}
+          </p>
         </div>
       )}
+      
+      {/* Home Temperature Display */}
+      <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
+        <h3 className="text-lg font-semibold text-white mb-1">Home Temperature</h3>
+        <div className="grid grid-cols-2 gap-4 text-sm">
+          <div>
+            <p className="text-gray-300">Total Heating Power</p>
+            <p className="font-bold text-white">{Math.abs(data.heatPump) + Math.abs(data.heating)} kW</p>
+          </div>
+          <div>
+            <p className="text-gray-300">Temperature</p>
+            <p className="font-bold text-white">{calculateHomeTemperature(Math.abs(data.heatPump) + Math.abs(data.heating))} °C</p>
+          </div>
+        </div>
+        <p className="text-xs text-gray-400 mt-2">
+          Based on combined heating power (heat pump + heating)
+        </p>
+      </div>
       
       {/* Value Adjustment Modal */}
       {editComponent && (
