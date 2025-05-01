@@ -624,6 +624,7 @@ export default function EnergyDashboard() {
         </div>
       )}
       
+      
       {/* Home Temperature Display - showing only temperature */}
       <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
         <h3 className="text-lg font-semibold text-white mb-1">Home Temperature</h3>
