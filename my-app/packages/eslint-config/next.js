@@ -1,4 +1,3 @@
-import js from "@eslint/js"
 import pluginNext from "@next/eslint-plugin-next"
 import eslintConfigPrettier from "eslint-config-prettier"
 import pluginReact from "eslint-plugin-react"
@@ -15,7 +14,7 @@ import { config as baseConfig } from "./base.js"
  * */
 export const nextJsConfig = [
   ...baseConfig,
-  js.configs.recommended,
+  { linterOptions: { reportUnusedDisableDirectives: true } },
   eslintConfigPrettier,
   ...tseslint.configs.recommended,
   {
