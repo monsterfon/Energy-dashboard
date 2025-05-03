@@ -59,7 +59,7 @@ export default function EnergyDashboard() {
   }
   
   // Calculate home temperature based on total heating power
-  const calculateHomeTemperature = (totalHeatingPower) => {
+  const calculateHomeTemperature = (totalHeatingPower: number): number => {
     // Use the provided temperature table
     const temperatureTable = [
       { power: 1.5, temp: 17.10 },
