@@ -54,7 +54,7 @@ export default function EnergyDashboard() {
   }
 
   // Handle target grid slider change
-  const handleTargetGridChange = (e) => {
+  const handleTargetGridChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTargetGrid(Number(e.target.value))
   }
   
