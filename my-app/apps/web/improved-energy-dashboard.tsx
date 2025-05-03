@@ -617,17 +617,100 @@ export default function EnergyDashboard() {
       {/* Car charging summary - updated to show only km/hour */}
       {Math.abs(data.car) > 0.1 && (
         <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
-          <h3 className="text-lg font-semibold text-white mb-1">Car Charging</h3>
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-lg font-semibold text-white">Car Charging</h3>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => {
+                  const newValue = Math.min(0, data.car + 1); // Increase by 1kW (less negative)
+                  setData(prev => ({
+                    ...prev,
+                    car: +newValue.toFixed(2)
+                  }));
+                  setUserEditedComponents(prev => ({
+                    ...prev,
+                    car: true
+                  }));
+                }}
+                className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <span className="text-lg">-</span>
+              </button>
+              <button 
+                onClick={() => {
+                  const newValue = Math.max(-20, data.car - 1); // Decrease by 1kW (more negative)
+                  setData(prev => ({
+                    ...prev,
+                    car: +newValue.toFixed(2)
+                  }));
+                  setUserEditedComponents(prev => ({
+                    ...prev,
+                    car: true
+                  }));
+                }}
+                className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+              >
+                <span className="text-lg">+</span>
+              </button>
+            </div>
+          </div>
           <div className="text-center">
             <p className="font-bold text-white text-xl">{Math.round(Math.abs(data.car) * 5)} km/h</p>
           </div>
         </div>
       )}
       
-      
       {/* Home Temperature Display - showing only temperature */}
       <div className="mt-4 p-3 bg-gray-700 rounded-lg text-center">
-        <h3 className="text-lg font-semibold text-white mb-1">Home Temperature</h3>
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-lg font-semibold text-white">Home Temperature</h3>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => {
+                // Decrease heating by 1kW total (split between heat pump and heating)
+                const newHeatPump = Math.max(-10, data.heatPump + 0.5); // Increase by 0.5kW (less negative)
+                const newHeating = Math.max(-10, data.heating + 0.5); // Increase by 0.5kW (less negative)
+                
+                setData(prev => ({
+                  ...prev,
+                  heatPump: +newHeatPump.toFixed(2),
+                  heating: +newHeating.toFixed(2)
+                }));
+                
+                setUserEditedComponents(prev => ({
+                  ...prev,
+                  heatPump: true,
+                  heating: true
+                }));
+              }}
+              className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+            >
+              <span className="text-lg">-</span>
+            </button>
+            <button 
+              onClick={() => {
+                // Increase heating by 1kW total (split between heat pump and heating)
+                const newHeatPump = Math.min(0, data.heatPump - 0.5); // Decrease by 0.5kW (more negative)
+                const newHeating = Math.min(0, data.heating - 0.5); // Decrease by 0.5kW (more negative)
+                
+                setData(prev => ({
+                  ...prev,
+                  heatPump: +newHeatPump.toFixed(2),
+                  heating: +newHeating.toFixed(2)
+                }));
+                
+                setUserEditedComponents(prev => ({
+                  ...prev,
+                  heatPump: true,
+                  heating: true
+                }));
+              }}
+              className="w-8 h-8 bg-gray-600 hover:bg-gray-500 rounded-full flex items-center justify-center text-white"
+            >
+              <span className="text-lg">+</span>
+            </button>
+          </div>
+        </div>
         <div className="text-center">
           <p className="font-bold text-white text-xl">{calculateHomeTemperature(Math.abs(data.heatPump) + Math.abs(data.heating))} °C</p>
         </div>
