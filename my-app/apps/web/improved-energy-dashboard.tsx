@@ -445,7 +445,7 @@ export default function EnergyDashboard() {
           >
             <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
             <g transform="translate(-24, -35) scale(1.5)">
-              <Battery size={32} />
+              <Battery size={32} className="text-green-600" />
             </g>
             <text x="0" y="20" textAnchor="middle" fill="#22c55e" fontSize="24" fontWeight="bold">
               {data.battery.power/1000} kW
@@ -472,7 +472,7 @@ export default function EnergyDashboard() {
           >
             <circle r="70" fill="#dcfce7" stroke="#22c55e" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
-              <Sun size={32} />
+              <Sun size={32} className="text-green-600" />
               {/* Weather indicator overlays - moved up */}
               {weatherMode === "cloudy" && (
                 <Cloud size={20} className="text-gray-500" style={{ position: 'absolute', top: -12, right: -10 }} />
@@ -543,7 +543,7 @@ export default function EnergyDashboard() {
           >
             <circle r="70" fill="#fee2e2" stroke="#ef4444" strokeWidth="4" />
             <g transform="translate(-24, -24) scale(1.5)">
-              <Car size={32} />
+              <Car size={32} className="text-red-500" />
             </g>
             <text x="0" y="40" textAnchor="middle" fill="#ef4444" fontSize="24" fontWeight="bold">
               {data.car} kW
