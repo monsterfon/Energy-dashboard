@@ -394,7 +394,7 @@ export default function EnergyDashboard() {
         </button>
         <p className="text-gray-300 text-sm mt-2 text-center">
           {isAutoMode 
-            ? "Car charging is automatically adjusted to reach target grid value" 
+            ? "Car charging is automatically adjusted" 
             : "All components use their set values"
           }
         </p>
