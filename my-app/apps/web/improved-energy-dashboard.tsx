@@ -88,18 +88,20 @@ export default function EnergyDashboard() {
     let lowerEntry = temperatureTable[0];
     let upperEntry = temperatureTable[temperatureTable.length - 1];
     
-    for (let i = 0; i < temperatureTable.length; i++) {
-      if (temperatureTable[i].power === totalHeatingPower) {
-        // Exact match found
-        return temperatureTable[i].temp;
+    // Use array.find() instead of indexed access to avoid TypeScript undefined errors
+    const exactMatch = temperatureTable.find(entry => entry.power === totalHeatingPower);
+    if (exactMatch) {
+      return exactMatch.temp;
+    }
+    
+    // Find lower and upper bounds for interpolation using safer methods
+    for (const entry of temperatureTable) {
+      if (entry.power < totalHeatingPower) {
+        lowerEntry = entry;
       }
       
-      if (temperatureTable[i].power < totalHeatingPower) {
-        lowerEntry = temperatureTable[i];
-      }
-      
-      if (temperatureTable[i].power > totalHeatingPower && temperatureTable[i].power < upperEntry.power) {
-        upperEntry = temperatureTable[i];
+      if (entry.power > totalHeatingPower && entry.power < upperEntry.power) {
+        upperEntry = entry;
       }
     }
     
@@ -123,7 +125,7 @@ export default function EnergyDashboard() {
   }, [weatherMode, userEditedComponents, isAutoMode]); // Added isAutoMode as dependency
 
   // Handle weather mode changes
-  const handleWeatherChange = (mode) => {
+  const handleWeatherChange = (mode: string): void => {
     setWeatherMode(mode)
 
     // Adjust solar output based on weather
@@ -147,7 +149,7 @@ export default function EnergyDashboard() {
   }
 
   // Handle opening the edit modal for a component
-  const handleEditComponent = (component, initialValue) => {
+  const handleEditComponent = (component: string, initialValue: any): void => {
     // Stop auto updates when editing
     if (intervalRef.current) {
       clearInterval(intervalRef.current)
@@ -215,7 +217,7 @@ export default function EnergyDashboard() {
   }
   
   // Handle value adjustment with arrow buttons
-  const adjustValue = (amount) => {
+  const adjustValue = (amount: number): void => {
     setEditValue(prev => {
       // Calculate new value with 2 decimal places
       const newValue = +(prev + amount).toFixed(2)
