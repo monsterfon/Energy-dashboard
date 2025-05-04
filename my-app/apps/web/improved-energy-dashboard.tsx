@@ -455,10 +455,13 @@ export default function EnergyDashboard() {
             </text>
           </g>
 
-          {/* Grid - Top Left - now grey */}
+          {/* Grid - Top Left - now grey with text */}
           <g transform="translate(150, 120)">
             <circle r="70" fill="#f3f4f6" stroke="#9ca3af" strokeWidth="4" />
-            <path d="M0,-20 L-20,20 L20,20 Z" stroke="#9ca3af" fill="none" strokeWidth="3" />
+            {/* Replacing triangle with "GRID" text */}
+            <text x="0" y="0" textAnchor="middle" dominantBaseline="middle" fill="#9ca3af" fontSize="24" fontWeight="bold">
+              GRID
+            </text>
             <text x="0" y="40" textAnchor="middle" fill="#9ca3af" fontSize="24" fontWeight="bold">
               {data.grid} kW
             </text>
