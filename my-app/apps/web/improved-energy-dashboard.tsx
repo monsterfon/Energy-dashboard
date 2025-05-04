@@ -87,25 +87,34 @@ export default function EnergyDashboard() {
     // Find the closest power entries in the table for interpolation
     let lowerEntry = temperatureTable[0];
     let upperEntry = temperatureTable[temperatureTable.length - 1];
+
     
-    // Use array.find() instead of indexed access to avoid TypeScript undefined errors
-    const exactMatch = temperatureTable.find(entry => entry.power === totalHeatingPower);
-    if (exactMatch) {
-      return exactMatch.temp;
-    }
     
-    // Find lower and upper bounds for interpolation using safer methods
-    for (const entry of temperatureTable) {
-      if (entry.power < totalHeatingPower) {
-        lowerEntry = entry;
+    for (let i = 0; i < temperatureTable.length; i++) {
+      // Safely check for exact match
+      if (temperatureTable[i]?.power === totalHeatingPower) {
+        // Exact match found
+        return temperatureTable[i]?.temp ?? -100;
       }
       
-      if (entry.power > totalHeatingPower && entry.power < upperEntry.power) {
-        upperEntry = entry;
+      // Check if power exists and is less than total heating power
+      const currentPower = temperatureTable[i]?.power;
+      if (currentPower !== undefined && currentPower < totalHeatingPower) {
+        lowerEntry = temperatureTable[i];
+      }
+      
+      // Check for upper entry
+      const currentUpperPower = temperatureTable[i]?.power;
+      if (currentUpperPower !== undefined && currentUpperPower > totalHeatingPower && 
+          upperEntry?.power !== undefined && currentUpperPower < upperEntry.power) {
+        upperEntry = temperatureTable[i];
       }
     }
     
-    // Linear interpolation between the two closest power entries
+    if (!lowerEntry || !upperEntry) {
+      return -100; // Return a safe default if table is somehow empty
+    }
+
     const ratio = (totalHeatingPower - lowerEntry.power) / (upperEntry.power - lowerEntry.power);
     const interpolatedTemp = lowerEntry.temp + ratio * (upperEntry.temp - lowerEntry.temp);
     
@@ -125,7 +134,7 @@ export default function EnergyDashboard() {
   }, [weatherMode, userEditedComponents, isAutoMode]); // Added isAutoMode as dependency
 
   // Handle weather mode changes
-  const handleWeatherChange = (mode: string): void => {
+  const handleWeatherChange = (mode: string) => {
     setWeatherMode(mode)
 
     // Adjust solar output based on weather
